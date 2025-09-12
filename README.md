@@ -1,98 +1,452 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# School Payment Backend API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A robust NestJS-based REST API for managing school payments and transactions with MongoDB integration, JWT authentication, and webhook support.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+- JWT Authentication & Authorization
+- Payment Gateway Integration
+- Transaction Management
+- Webhook Processing
+- Data Pagination & Filtering
+- Advanced Search & Sorting
+- Comprehensive Logging
+- Data Validation
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Tech Stack
 
-## Project setup
+- **Framework**: NestJS
+- **Database**: MongoDB Atlas
+- **Authentication**: JWT (JSON Web Tokens)
+- **Validation**: class-validator & class-transformer
+- **HTTP Client**: Axios
+- **Password Hashing**: bcryptjs
 
-```bash
-$ npm install
-```
+## Installation & Setup
 
-## Compile and run the project
+### Prerequisites
 
-```bash
-# development
-$ npm run start
+- Node.js (v16 or higher)
+- MongoDB Atlas account
+- npm or yarn
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
+### 1. Clone the Repository
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+git clone https://github.com/AyeshaKODER/school-payment-backend.git)
+cd school-payment-backend
 ```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Environment Configuration
+
+Create a `.env` file in the root directory:
+
+```env
+# Database
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/school-payments
+
+# JWT
+JWT_SECRET=your-super-secret-jwt-key
+JWT_EXPIRES_IN=24h
+
+# Payment Gateway
+PG_KEY=edvtest01
+API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0cnVzdGVlSWQiOiI2NWIwZTU1MmRkMzE5NTBhOWI0MWM1YmEiLCJJbmRleE9mQXBpS2V5Ijo2LCJpYXQiOjE3MTE2MjIyNzAsImV4cCI6MTc0MzE3OTg3MH0.Rye77Dp59GGxwCmwWekJHRj6edXWJnff9finjMhxKuw
+SCHOOL_ID=65b0e6293e9f76a9694d84b4
+PAYMENT_API_URL=https://api.paymentgateway.com
+
+# Server
+PORT=3000
+```
+
+### 4. Seed Sample Data
+
+```bash
+npm run seed
+```
+
+### 5. Start the Application
+
+```bash
+# Development
+npm run start:dev
+
+# Production
+npm run build
+npm run start:prod
+```
+
+The API will be available at `http://localhost:3000`
+
+## API Documentation
+
+### Authentication
+
+#### Register User
+
+```http
+POST /auth/register
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "email": "admin@schoolpay.com",
+  "password": "password123"
+}
+```
+
+#### Login
+
+```http
+POST /auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "password123"
+}
+```
+
+**Response:**
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+### Payment Management
+
+#### Create Payment
+
+```http
+POST /payment/create-payment
+Authorization: Bearer <access_token>
+Content-Type: application/json
+
+{
+  "school_id": "65b0e6293e9f76a9694d84b4",
+  "trustee_id": "65b0e552dd31950a9b41c5ba",
+  "student_info": {
+    "name": "John Doe",
+    "id": "STU001",
+    "email": "john.doe@school.edu"
+  },
+  "gateway_name": "PhonePe",
+  "order_amount": 2000,
+  "payment_mode": "upi"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "custom_order_id": "ORD_1234567890_abc123",
+  "payment_url": "https://api.paymentgateway.com/payment/ORD_1234567890_abc123",
+  "order_id": "60f1234567890123456789ab",
+  "message": "Payment request created successfully"
+}
+```
+
+### Transaction Management
+
+#### Get All Transactions
+
+```http
+GET /transactions?page=1&limit=10&sort=payment_time&order=desc&status=success&schoolId=65b0e6293e9f76a9694d84b4&dateFrom=2024-01-01&dateTo=2024-12-31
+Authorization: Bearer <access_token>
+```
+
+**Query Parameters:**
+
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Items per page (default: 10)
+- `sort` (optional): Sort field (payment_time, status, transaction_amount)
+- `order` (optional): Sort order (asc, desc)
+- `status` (optional): Filter by status (success, failed, pending, processing)
+- `schoolId` (optional): Filter by school ID
+- `dateFrom` (optional): Filter transactions from date (YYYY-MM-DD)
+- `dateTo` (optional): Filter transactions to date (YYYY-MM-DD)
+
+**Response:**
+
+```json
+{
+  "transactions": [
+    {
+      "collect_id": "60f1234567890123456789ab",
+      "school_id": "65b0e6293e9f76a9694d84b4",
+      "gateway": "PhonePe",
+      "order_amount": 2000,
+      "transaction_amount": 2200,
+      "status": "success",
+      "custom_order_id": "ORD_1234567890_abc123",
+      "student_info": {
+        "name": "John Doe",
+        "id": "STU001",
+        "email": "john.doe@school.edu"
+      },
+      "payment_time": "2024-01-15T10:30:00.000Z",
+      "payment_mode": "upi",
+      "bank_reference": "PHONPE1234"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 50,
+    "totalPages": 5
+  }
+}
+```
+
+#### Get Transactions by School
+
+```http
+GET /transactions/school/65b0e6293e9f76a9694d84b4?page=1&limit=10
+Authorization: Bearer <access_token>
+```
+
+#### Check Transaction Status
+
+```http
+GET /transaction-status/ORD_1234567890_abc123
+Authorization: Bearer <access_token>
+```
+
+**Response:**
+
+```json
+{
+  "custom_order_id": "ORD_1234567890_abc123",
+  "collect_id": "60f1234567890123456789ab",
+  "status": "success",
+  "order_amount": 2000,
+  "transaction_amount": 2200,
+  "payment_mode": "upi",
+  "payment_time": "2024-01-15T10:30:00.000Z",
+  "payment_message": "Payment successful",
+  "bank_reference": "PHONPE1234",
+  "student_info": {
+    "name": "John Doe",
+    "id": "STU001",
+    "email": "john.doe@school.edu"
+  }
+}
+```
+
+### Webhook Integration
+
+#### Process Webhook
+
+```http
+POST /webhook
+Content-Type: application/json
+
+{
+  "status": 200,
+  "order_info": {
+    "order_id": "ORD_1234567890_abc123",
+    "order_amount": 2000,
+    "transaction_amount": 2200,
+    "gateway": "PhonePe",
+    "bank_reference": "PHONPE1234",
+    "status": "success",
+    "payment_mode": "upi",
+    "payemnt_details": "success@phonepe",
+    "Payment_message": "payment success",
+    "payment_time": "2024-01-15T10:30:00.000Z",
+    "error_message": "NA"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Webhook processed successfully",
+  "webhook_id": "WH_1234567890_xyz789",
+  "order_id": "ORD_1234567890_abc123",
+  "updated_status": "success"
+}
+```
+
+## Database Schemas
+
+### Order Schema
+
+```javascript
+{
+  _id: ObjectId,
+  school_id: ObjectId,
+  trustee_id: ObjectId,
+  student_info: {
+    name: String,
+    id: String,
+    email: String
+  },
+  gateway_name: String,
+  custom_order_id: String,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Order Status Schema
+
+```javascript
+{
+  _id: ObjectId,
+  collect_id: ObjectId, // Reference to Order
+  order_amount: Number,
+  transaction_amount: Number,
+  payment_mode: String,
+  payment_details: String,
+  bank_reference: String,
+  payment_message: String,
+  status: String, // 'pending', 'success', 'failed', 'processing'
+  error_message: String,
+  payment_time: Date,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### User Schema
+
+```javascript
+{
+  _id: ObjectId,
+  username: String,
+  email: String,
+  password: String, // Hashed
+  role: String,
+  isActive: Boolean,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Webhook Log Schema
+
+```javascript
+{
+  _id: ObjectId,
+  webhook_id: String,
+  event_type: String,
+  payload: Object,
+  status: String,
+  error_message: String,
+  processed_at: Date,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+## Testing with Postman
+
+### 1. Import Environment Variables
+
+Create a Postman environment with:
+
+- `baseUrl`: `http://localhost:3000`
+- `accessToken`: (Set after login)
+
+### 2. Authentication Flow
+
+1. Register or login to get access token
+2. Set the token in your environment variables
+3. Use `{{accessToken}}` in Authorization headers
+
+### 3. Test Webhook
+
+Use Postman to simulate webhook calls to `/webhook` endpoint with the provided payload format.
 
 ## Deployment
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+### Environment Variables for Production
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+```env
+MONGODB_URI=mongodb+srv://prod-user:password@cluster.mongodb.net/school-payments-prod
+JWT_SECRET=your-super-secure-production-jwt-secret
+NODE_ENV=production
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Build Commands
 
-## Resources
+```bash
+npm run build
+npm run start:prod
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+## Security Features
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+- ✅ JWT Authentication on all protected routes
+- ✅ Password hashing with bcryptjs
+- ✅ Input validation and sanitization
+- ✅ CORS configuration
+- ✅ Environment-based configuration
+- ✅ Error handling and logging
 
-## Support
+## Performance Optimizations
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+- ✅ MongoDB indexes on frequently queried fields
+- ✅ Pagination for large datasets
+- ✅ Aggregation pipelines for complex queries
+- ✅ Query optimization with proper filtering
 
-## Stay in touch
+## Error Handling
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+The API returns consistent error responses:
 
-## License
+```json
+{
+  "statusCode": 400,
+  "message": "Validation failed",
+  "error": "Bad Request"
+}
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## Logging
+
+- Webhook events are logged to `webhook_logs` collection
+- Failed transactions are logged for debugging
+- Application logs are available in console
+
+## Sample Data
+
+After running `npm run seed`, you'll have:
+
+- 1 admin user (username: `admin`, password: `password123`)
+- 50 sample transactions across 3 schools
+- Various payment statuses and modes
+
+## Troubleshooting
+
+### Common Issues
+
+1. **MongoDB Connection Error**
+   - Verify MongoDB Atlas connection string
+   - Check network access and IP whitelist
+
+2. **JWT Token Issues**
+   - Ensure JWT_SECRET is set in environment
+   - Check token expiration
+
+3. **Webhook Processing Errors**
+   - Verify payload format matches schema
+   - Check order existence in database
+
+### Support
+
+For issues and questions, please check the logs and verify your environment configuration.
