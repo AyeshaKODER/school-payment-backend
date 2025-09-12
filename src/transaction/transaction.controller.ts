@@ -1,17 +1,11 @@
-import {
-  Controller,
-  Get,
-  Param,
-  Query,
-  UseGuards,
-  ParseIntPipe,
-} from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { Controller, Get, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { GetUser, JwtPayload } from '../auth/user.decorator';
 
 import { TransactionService } from './transaction.service';
 
 @Controller()
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(JwtAuthGuard)
 export class TransactionController {
   constructor(private transactionService: TransactionService) {}
 
@@ -25,6 +19,7 @@ export class TransactionController {
     @Query('schoolId') schoolId?: string,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
+    @GetUser() user: JwtPayload,   // 👈 logged-in user
   ) {
     return this.transactionService.getAllTransactions(
       page,
@@ -35,6 +30,7 @@ export class TransactionController {
       schoolId,
       dateFrom,
       dateTo,
+      user,
     );
   }
 
@@ -43,16 +39,21 @@ export class TransactionController {
     @Param('schoolId') schoolId: string,
     @Query('page', ParseIntPipe) page: number = 1,
     @Query('limit', ParseIntPipe) limit: number = 10,
+    @GetUser() user: JwtPayload,   // 👈 logged-in user
   ) {
     return this.transactionService.getTransactionsBySchool(
       schoolId,
       page,
       limit,
+      user,
     );
   }
 
   @Get('transaction-status/:customOrderId')
-  async getTransactionStatus(@Param('customOrderId') customOrderId: string) {
-    return this.transactionService.getTransactionStatus(customOrderId);
+  async getTransactionStatus(
+    @Param('customOrderId') customOrderId: string,
+    @GetUser() user: JwtPayload,   // 👈 logged-in user
+  ) {
+    return this.transactionService.getTransactionStatus(customOrderId, user);
   }
 }
