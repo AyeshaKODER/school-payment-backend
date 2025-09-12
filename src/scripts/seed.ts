@@ -1,29 +1,30 @@
 import { NestFactory } from '@nestjs/core';
 import { Model } from 'mongoose';
-import { AppModule } from './app.module';
-import { Order, OrderDocument } from './schemas/order.schema';
+import { AppModule } from '../app.module';
+import { Order, OrderDocument } from '../payment/schemas/order.schema';
 import {
   OrderStatus,
   OrderStatusDocument,
-} from './schemas/order-status.schema';
-import { User, UserDocument } from './schemas/user.schema';
+} from '../transaction/schemas/order-status.schema';
+import { User, UserDocument } from '../user/schemas/user.schema';
 import * as bcrypt from 'bcryptjs';
+import { getModelToken } from '@nestjs/mongoose';
 
 async function seedData() {
   const app = await NestFactory.createApplicationContext(AppModule);
 
-  // Get models
-  const orderModel = app.get<Model<OrderDocument>>('OrderModel');
-  const orderStatusModel =
-    app.get<Model<OrderStatusDocument>>('OrderStatusModel');
-  const userModel = app.get<Model<UserDocument>>('UserModel');
+  // ✅ Get models properly
+  const orderModel = app.get<Model<OrderDocument>>(getModelToken(Order.name));
+  const orderStatusModel = app.get<Model<OrderStatusDocument>>(
+    getModelToken(OrderStatus.name),
+  );
+  const userModel = app.get<Model<UserDocument>>(getModelToken(User.name));
 
   try {
     // Clear existing data
     await orderModel.deleteMany({});
     await orderStatusModel.deleteMany({});
     await userModel.deleteMany({});
-
     console.log('Cleared existing data');
 
     // Create default user
@@ -35,7 +36,6 @@ async function seedData() {
       role: 'admin',
     });
     await user.save();
-
     console.log(
       'Created default user - username: admin, password: password123',
     );
@@ -59,7 +59,9 @@ async function seedData() {
 
     // Create sample orders and order statuses
     for (let i = 1; i <= 50; i++) {
-      const customOrderId = `ORD_${Date.now() + i}_${Math.random().toString(36).substr(2, 9)}`;
+      const customOrderId = `ORD_${Date.now() + i}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
       const schoolId = schools[Math.floor(Math.random() * schools.length)];
       const trusteeId = trustees[Math.floor(Math.random() * trustees.length)];
       const gateway = gateways[Math.floor(Math.random() * gateways.length)];
@@ -92,7 +94,9 @@ async function seedData() {
         payment_mode: paymentMode,
         payment_details:
           status === 'success' ? `success@${gateway.toLowerCase()}` : 'failed',
-        bank_reference: `${gateway.toUpperCase()}${Math.floor(Math.random() * 10000)}`,
+        bank_reference: `${gateway.toUpperCase()}${Math.floor(
+          Math.random() * 10000,
+        )}`,
         payment_message:
           status === 'success' ? 'Payment successful' : 'Payment failed',
         status: status,
@@ -105,17 +109,17 @@ async function seedData() {
       await orderStatus.save();
     }
 
-    console.log('Seeded 50 sample transactions');
+    console.log('✅ Seeded 50 sample transactions');
     console.log('Sample school IDs:', schools);
-    console.log('Data seeding completed successfully!');
+    console.log('🎉 Data seeding completed successfully!');
   } catch (error) {
-    console.error('Error seeding data:', error);
+    console.error('❌ Error seeding data:', error);
   } finally {
     await app.close();
   }
 }
 
-// Run if this script is executed directly
+// Run if executed directly
 if (require.main === module) {
   seedData();
 }
