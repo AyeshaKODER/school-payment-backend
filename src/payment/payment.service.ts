@@ -5,13 +5,14 @@ import { HttpService } from '@nestjs/axios';
 import { Model } from 'mongoose';
 import { firstValueFrom } from 'rxjs';
 import * as jwt from 'jsonwebtoken';
+import { AxiosResponse } from 'axios';
 
-import { Order, OrderDocument } from '../schemas/order.schema';
+import { Order, OrderDocument } from './schemas/order.schema';
 import {
   OrderStatus,
   OrderStatusDocument,
-} from '../schemas/order-status.schema';
-import { CreatePaymentDto } from './dto/payment.dto';
+} from '../transaction/schemas/order-status.schema';
+import { CreatePaymentDto } from './dto/create-payment.dto';
 
 @Injectable()
 export class PaymentService {
@@ -64,6 +65,9 @@ export class PaymentService {
 
       // Sign JWT token
       const apiKey = this.configService.get<string>('API_KEY');
+      if (!apiKey) {
+        throw new InternalServerErrorException('API_KEY not configured');
+      }
       const signedToken = jwt.sign(jwtPayload, apiKey, { expiresIn: '1h' });
 
       // Prepare payment gateway request
@@ -84,8 +88,8 @@ export class PaymentService {
         'https://api.example.com';
 
       try {
-        const response = await firstValueFrom(
-          this.httpService.post(
+        const response = await firstValueFrom<AxiosResponse<{ payment_url?: string }>>(
+          this.httpService.post<{ payment_url?: string }>(
             `${paymentApiUrl}/create-collect-request`,
             paymentGatewayPayload,
             {

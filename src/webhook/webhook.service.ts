@@ -6,12 +6,12 @@ import {
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 
-import { Order, OrderDocument } from '../schemas/order.schema';
+import { Order, OrderDocument } from '../payment/schemas/order.schema';
 import {
   OrderStatus,
   OrderStatusDocument,
-} from '../schemas/order-status.schema';
-import { WebhookLog, WebhookLogDocument } from '../schemas/webhook-log.schema';
+} from '../transaction/schemas/order-status.schema';
+import { WebhookLog, WebhookLogDocument } from './schemas/webhook-log.schema';
 import { WebhookDto } from './dto/webhook.dto';
 
 @Injectable()

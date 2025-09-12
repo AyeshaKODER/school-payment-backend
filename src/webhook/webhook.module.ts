@@ -3,9 +3,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 
 import { WebhookService } from './webhook.service';
 import { WebhookController } from './webhook.controller';
-import { Order, OrderSchema } from '../schemas/order.schema';
-import { OrderStatus, OrderStatusSchema } from '../schemas/order-status.schema';
-import { WebhookLog, WebhookLogSchema } from '../schemas/webhook-log.schema';
+import { Order, OrderSchema } from '../payment/schemas/order.schema';
+import { OrderStatus, OrderStatusSchema } from '../transaction/schemas/order-status.schema';
+import { WebhookLog, WebhookLogSchema } from './schemas/webhook-log.schema';
 
 @Module({
   imports: [

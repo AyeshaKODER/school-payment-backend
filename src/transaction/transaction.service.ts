@@ -1,12 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, PipelineStage } from 'mongoose';
 
-import { Order, OrderDocument } from '../schemas/order.schema';
+import { Order, OrderDocument } from '../payment/schemas/order.schema';
 import {
   OrderStatus,
   OrderStatusDocument,
-} from '../schemas/order-status.schema';
+} from './schemas/order-status.schema';
 
 @Injectable()
 export class TransactionService {
@@ -57,7 +57,7 @@ export class TransactionService {
       sortOptions['orderStatus.payment_time'] = -1; // Default sort by payment_time desc
     }
 
-    const pipeline = [
+    const pipeline: PipelineStage[] = [
       {
         $lookup: {
           from: 'order_status',
@@ -120,7 +120,7 @@ export class TransactionService {
   ) {
     const skip = (page - 1) * limit;
 
-    const pipeline = [
+    const pipeline: PipelineStage[] = [
       {
         $match: { school_id: schoolId },
       },

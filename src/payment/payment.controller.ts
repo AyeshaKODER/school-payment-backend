@@ -8,7 +8,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 
 import { PaymentService } from './payment.service';
-import { CreatePaymentDto } from './dto/payment.dto';
+import { CreatePaymentDto } from './dto/create-payment.dto';
 
 @Controller('payment')
 @UseGuards(AuthGuard('jwt'))
