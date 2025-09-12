@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
 import { HttpService } from '@nestjs/axios';
@@ -24,9 +28,10 @@ export class PaymentService {
     private httpService: HttpService,
   ) {}
 
+  // ---------------- CREATE PAYMENT ---------------- //
   async createPayment(createPaymentDto: CreatePaymentDto) {
     try {
-      const { order_amount, school_id, student_info } = createPaymentDto;
+      const { order_amount, school_id } = createPaymentDto;
 
       // Generate custom order id
       const custom_order_id = `ORD_${Date.now()}_${Math.random()
@@ -110,10 +115,87 @@ export class PaymentService {
         message: 'Payment request created successfully',
       };
     } catch (error) {
-      console.error('Payment creation error:', error);
+      console.error('Payment creation error:', error?.response?.data || error);
       throw new InternalServerErrorException(
         'Failed to create payment request',
       );
+    }
+  }
+
+  // ---------------- CHECK PAYMENT STATUS ---------------- //
+  async checkPaymentStatus(orderId: string) {
+    try {
+      const order = await this.orderModel.findById(orderId);
+      if (!order) {
+        throw new NotFoundException('Order not found');
+      }
+
+      const paymentApiUrl = this.configService.get<string>('PAYMENT_API_URL');
+      const apiKey = this.configService.get<string>('PAYMENT_API_KEY');
+
+      const response = await firstValueFrom(
+        this.httpService.get(
+          `${paymentApiUrl}/collect-request/${order.custom_order_id}`,
+          {
+            headers: { Authorization: `Bearer ${apiKey}` },
+          },
+        ),
+      );
+
+      // Update order status in DB
+      await this.orderStatusModel.updateOne(
+        { collect_id: order._id },
+        {
+          $set: {
+            status: response.data.status,
+            payment_details: response.data.payment_details || 'N/A',
+            payment_message: response.data.message || 'Updated',
+            bank_reference: response.data.bank_reference || 'N/A',
+            payment_time: new Date(),
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error(
+        'Check payment status error:',
+        error?.response?.data || error,
+      );
+      throw new InternalServerErrorException('Failed to check payment status');
+    }
+  }
+
+  // ---------------- HANDLE WEBHOOK ---------------- //
+  async handleWebhook(payload: any) {
+    try {
+      const { collect_request_id, status, bank_reference, message } = payload;
+
+      // Find order by custom_order_id
+      const order = await this.orderModel.findOne({
+        custom_order_id: collect_request_id,
+      });
+      if (!order) {
+        throw new NotFoundException('Order not found for webhook');
+      }
+
+      // Update order status
+      await this.orderStatusModel.updateOne(
+        { collect_id: order._id },
+        {
+          $set: {
+            status,
+            bank_reference: bank_reference || 'N/A',
+            payment_message: message || 'Updated via webhook',
+            payment_time: new Date(),
+          },
+        },
+      );
+
+      return { success: true, message: 'Webhook processed' };
+    } catch (error) {
+      console.error('Webhook handling error:', error?.response?.data || error);
+      throw new InternalServerErrorException('Failed to process webhook');
     }
   }
 }
