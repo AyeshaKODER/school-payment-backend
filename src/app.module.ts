@@ -1,26 +1,27 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-
 import { AuthModule } from './auth/auth.module';
 import { PaymentModule } from './payment/payment.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { WebhookModule } from './webhook/webhook.module';
+import { AuthMiddleware } from './auth/auth.middleware';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         uri: configService.get<string>('MONGODB_URI'),
+        retryWrites: true,
+        w: 'majority',
       }),
       inject: [ConfigService],
     }),
@@ -29,16 +30,26 @@ import { WebhookModule } from './webhook/webhook.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES_IN') },
+        signOptions: { 
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h'),
+          issuer: 'school-payment-api',
+          audience: 'school-payment-frontend',
+        },
       }),
       inject: [ConfigService],
+      global: true,
     }),
     AuthModule,
     PaymentModule,
     TransactionModule,
     WebhookModule,
   ],
-  controllers: [AppController],  // ✅ add this
-  providers: [AppService],       // ✅ add this
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    // Apply auth middleware to protected routes
+    consumer
+      .apply(AuthMiddleware)
+      .forRoutes('/transactions', '/payment', '/transaction-status');
+  }
+}
