@@ -6,7 +6,7 @@ import {
   OrderStatus,
   OrderStatusDocument,
 } from '../transaction/schemas/order-status.schema';
-import { User, UserDocument } from '../user/schemas/user.schema';
+import { User, UserDocument } from '../auth/user.schema';
 import * as bcrypt from 'bcryptjs';
 import { getModelToken } from '@nestjs/mongoose';
 
