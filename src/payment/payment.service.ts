@@ -26,22 +26,25 @@ export class PaymentService {
 
   async createPayment(createPaymentDto: CreatePaymentDto) {
     try {
-      // Generate unique custom_order_id
-      const custom_order_id = `ORD_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const { order_amount, school_id, student_info } = createPaymentDto;
 
-      // Create order in database
+      // Generate custom order id
+      const custom_order_id = `ORD_${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+
+      // Save order locally
       const order = new this.orderModel({
         ...createPaymentDto,
         custom_order_id,
       });
-
       const savedOrder = await order.save();
 
       // Create initial order status
       const orderStatus = new this.orderStatusModel({
         collect_id: savedOrder._id,
-        order_amount: createPaymentDto.order_amount,
-        transaction_amount: createPaymentDto.order_amount,
+        order_amount,
+        transaction_amount: order_amount,
         payment_mode: createPaymentDto.payment_mode,
         payment_details: 'Pending',
         bank_reference: 'PENDING',
@@ -50,78 +53,62 @@ export class PaymentService {
         error_message: 'NA',
         payment_time: new Date(),
       });
-
       await orderStatus.save();
 
-      // Prepare JWT payload for payment gateway
-      const jwtPayload = {
-        collect_id: savedOrder._id.toString(),
-        order_amount: createPaymentDto.order_amount,
-        custom_order_id: custom_order_id,
-        school_id: createPaymentDto.school_id,
-        student_info: createPaymentDto.student_info,
-        timestamp: Date.now(),
-      };
-
-      // Sign JWT token
-      const apiKey = this.configService.get<string>('API_KEY');
-      if (!apiKey) {
-        throw new InternalServerErrorException('API_KEY not configured');
-      }
-      const signedToken = jwt.sign(jwtPayload, apiKey, { expiresIn: '1h' });
-
-      // Prepare payment gateway request
-      const paymentGatewayPayload = {
-        pg_key: this.configService.get<string>('PG_KEY'),
-        order_id: custom_order_id,
-        order_amount: createPaymentDto.order_amount,
-        student_info: createPaymentDto.student_info,
-        gateway_name: createPaymentDto.gateway_name,
-        payment_mode: createPaymentDto.payment_mode,
-        signature: signedToken,
-      };
-
-      // Call payment gateway API (create-collect-request)
-      // Note: Replace with actual payment gateway URL
-      const paymentApiUrl =
-        this.configService.get<string>('PAYMENT_API_URL') ||
-        'https://api.example.com';
-
-      try {
-        const response = await firstValueFrom<AxiosResponse<{ payment_url?: string }>>(
-          this.httpService.post<{ payment_url?: string }>(
-            `${paymentApiUrl}/create-collect-request`,
-            paymentGatewayPayload,
-            {
-              headers: {
-                Authorization: `Bearer ${apiKey}`,
-                'Content-Type': 'application/json',
-              },
-            },
-          ),
+      // ✅ Prepare JWT sign using PG Secret Key
+      const pgKey = this.configService.get<string>('PAYMENT_PG_KEY');
+      if (!pgKey) {
+        throw new InternalServerErrorException(
+          'PAYMENT_PG_KEY not configured in .env',
         );
-
-        // Return the payment page URL from the response
-        return {
-          success: true,
-          custom_order_id,
-          payment_url:
-            response.data.payment_url ||
-            `${paymentApiUrl}/payment/${custom_order_id}`,
-          order_id: savedOrder._id,
-          message: 'Payment request created successfully',
-        };
-      } catch (apiError) {
-        console.error('Payment gateway API error:', apiError);
-        // Even if API fails, return local payment URL for testing
-        return {
-          success: true,
-          custom_order_id,
-          payment_url: `http://localhost:3000/payment/${custom_order_id}`,
-          order_id: savedOrder._id,
-          message: 'Payment request created successfully (local fallback)',
-        };
       }
+
+      const jwtPayload = {
+        school_id,
+        amount: order_amount,
+        callback_url: this.configService.get<string>('CALLBACK_URL'),
+      };
+
+      const sign = jwt.sign(jwtPayload, pgKey, { expiresIn: '5m' });
+
+      // ✅ Build request payload for Edviron
+      const paymentGatewayPayload = {
+        school_id,
+        amount: order_amount,
+        callback_url: this.configService.get<string>('CALLBACK_URL'),
+        sign,
+      };
+
+      // Call Edviron API
+      const paymentApiUrl = this.configService.get<string>('PAYMENT_API_URL');
+      const apiKey = this.configService.get<string>('PAYMENT_API_KEY');
+
+      const response = await firstValueFrom<
+        AxiosResponse<{
+          collect_request_id: string;
+          Collect_request_url: string;
+        }>
+      >(
+        this.httpService.post(
+          `${paymentApiUrl}/create-collect-request`,
+          paymentGatewayPayload,
+          {
+            headers: {
+              Authorization: `Bearer ${apiKey}`,
+              'Content-Type': 'application/json',
+            },
+          },
+        ),
+      );
+
+      return {
+        success: true,
+        custom_order_id,
+        collect_request_id: response.data.collect_request_id,
+        payment_url: response.data.Collect_request_url,
+        order_id: savedOrder._id,
+        message: 'Payment request created successfully',
+      };
     } catch (error) {
       console.error('Payment creation error:', error);
       throw new InternalServerErrorException(
