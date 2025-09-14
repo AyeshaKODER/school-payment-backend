@@ -1,5 +1,4 @@
 import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
-import { IsStrongPassword } from '../validation/auth-validation.pipe';
 
 export class CreateUserDto {
   @IsNotEmpty({ message: 'Username is required' })

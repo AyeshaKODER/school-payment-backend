@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 
-import { User, UserDocument } from '../schemas/user.schema';
+import { User, UserDocument } from './schemas/user.schema';
 import { CreateUserDto, LoginDto, AuthResponseDto } from './dto/auth.dto';
 
 @Injectable()
@@ -164,8 +164,8 @@ export class AuthService {
       email: user.email,
       role: user.role,
       isActive: user.isActive,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      createdAt: (user as any).createdAt,
+      updatedAt: (user as any).updatedAt,
     };
   }
 }

@@ -1,6 +1,7 @@
-import { Controller, Get, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
+import { Controller, Get, Param, Query, UseGuards, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { GetUser, JwtPayload } from '../auth/user.decorator';
+import { GetUser } from '../auth/user.decorator';
+import type { JwtPayload } from '../auth/user.decorator';
 
 import { TransactionService } from './transaction.service';
 
@@ -11,15 +12,15 @@ export class TransactionController {
 
   @Get('transactions')
   async getAllTransactions(
-    @Query('page', ParseIntPipe) page: number = 1,
-    @Query('limit', ParseIntPipe) limit: number = 10,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
     @Query('sort') sort?: string,
     @Query('order') order?: string,
     @Query('status') status?: string,
     @Query('schoolId') schoolId?: string,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
-    @GetUser() user: JwtPayload,   // 👈 logged-in user
+    @GetUser() user?: JwtPayload,   // 👈 logged-in user
   ) {
     return this.transactionService.getAllTransactions(
       page,
@@ -30,30 +31,28 @@ export class TransactionController {
       schoolId,
       dateFrom,
       dateTo,
-      user,
     );
   }
 
   @Get('transactions/school/:schoolId')
   async getTransactionsBySchool(
     @Param('schoolId') schoolId: string,
-    @Query('page', ParseIntPipe) page: number = 1,
-    @Query('limit', ParseIntPipe) limit: number = 10,
-    @GetUser() user: JwtPayload,   // 👈 logged-in user
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @GetUser() user?: JwtPayload,   // 👈 logged-in user
   ) {
     return this.transactionService.getTransactionsBySchool(
       schoolId,
       page,
       limit,
-      user,
     );
   }
 
   @Get('transaction-status/:customOrderId')
   async getTransactionStatus(
     @Param('customOrderId') customOrderId: string,
-    @GetUser() user: JwtPayload,   // 👈 logged-in user
+    @GetUser() user?: JwtPayload,   // 👈 logged-in user
   ) {
-    return this.transactionService.getTransactionStatus(customOrderId, user);
+    return this.transactionService.getTransactionStatus(customOrderId);
   }
 }
