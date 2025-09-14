@@ -84,10 +84,13 @@ async function seedData() {
 
       const savedOrder = await order.save();
 
+      // Log the custom order ID
+      console.log(`Created order ${i}: customOrderId = ${customOrderId}`);
+
       // Create order status
       const orderStatus = new orderStatusModel({
         collect_id: savedOrder._id,
-        custom_order_id: customOrderId, // ✅ Added this
+        custom_order_id: customOrderId,
         order_amount: orderAmount,
         transaction_amount: transactionAmount,
         payment_mode: paymentMode,
@@ -102,7 +105,7 @@ async function seedData() {
         error_message: status === 'failed' ? 'Insufficient balance' : 'NA',
         payment_time: new Date(
           Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000,
-        ), // Random date within last 30 days
+        ),
       });
 
       await orderStatus.save();
@@ -118,6 +121,7 @@ async function seedData() {
   }
 }
 
+// ✅ Run the seed function when this file is executed directly
 if (require.main === module) {
   seedData();
 }
