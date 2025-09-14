@@ -30,6 +30,13 @@ export class AuthController {
     return this.authService.login(loginDto);
   }
 
+  @Get('protected')
+  @UseGuards(JwtAuthGuard)
+  getProtected() {
+    return { message: 'This is a protected route ✅' };
+  }
+
+
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   async getProfile(@GetUser() user: JwtPayload) {
