@@ -176,34 +176,32 @@ export class TransactionService {
     };
   }
 
-  async getTransactionStatus(customOrderId: string) {
-    const order = await this.orderModel.findOne({
-      custom_order_id: customOrderId,
+async getTransactionStatus(customOrderId: string) {
+  const orderStatus = await this.orderStatusModel.findOne({
+    custom_order_id: customOrderId,
+  });
+
+  if (!orderStatus) {
+    throw new NotFoundException({
+      message: 'Transaction not found',
+      error: 'Not Found',
+      statusCode: 404,
     });
+  }
 
-    if (!order) {
-      throw new NotFoundException('Transaction not found');
-    }
+  const order = await this.orderModel.findById(orderStatus.collect_id);
 
-    const orderStatus = await this.orderStatusModel.findOne({
-      collect_id: order._id,
-    });
-
-    if (!orderStatus) {
-      throw new NotFoundException('Transaction status not found');
-    }
-
-    return {
-      custom_order_id: customOrderId,
-      collect_id: order._id,
-      status: orderStatus.status,
-      order_amount: orderStatus.order_amount,
-      transaction_amount: orderStatus.transaction_amount,
-      payment_mode: orderStatus.payment_mode,
-      payment_time: orderStatus.payment_time,
-      payment_message: orderStatus.payment_message,
-      bank_reference: orderStatus.bank_reference,
-      student_info: order.student_info,
-    };
+  return {
+    custom_order_id: customOrderId,
+    collect_id: orderStatus.collect_id,
+    status: orderStatus.status,
+    order_amount: orderStatus.order_amount,
+    transaction_amount: orderStatus.transaction_amount,
+    payment_mode: orderStatus.payment_mode,
+    payment_time: orderStatus.payment_time,
+    payment_message: orderStatus.payment_message,
+    bank_reference: orderStatus.bank_reference,
+    student_info: order.student_info,
+  };
   }
 }

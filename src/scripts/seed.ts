@@ -13,7 +13,6 @@ import { getModelToken } from '@nestjs/mongoose';
 async function seedData() {
   const app = await NestFactory.createApplicationContext(AppModule);
 
-  // ✅ Get models properly
   const orderModel = app.get<Model<OrderDocument>>(getModelToken(Order.name));
   const orderStatusModel = app.get<Model<OrderStatusDocument>>(
     getModelToken(OrderStatus.name),
@@ -40,7 +39,6 @@ async function seedData() {
       'Created default user - username: admin, password: password123',
     );
 
-    // Sample schools and trustees
     const schools = [
       '65b0e6293e9f76a9694d84b4',
       '65b0e6293e9f76a9694d84b5',
@@ -89,6 +87,7 @@ async function seedData() {
       // Create order status
       const orderStatus = new orderStatusModel({
         collect_id: savedOrder._id,
+        custom_order_id: customOrderId, // ✅ Added this
         order_amount: orderAmount,
         transaction_amount: transactionAmount,
         payment_mode: paymentMode,
@@ -119,7 +118,6 @@ async function seedData() {
   }
 }
 
-// Run if executed directly
 if (require.main === module) {
   seedData();
 }
