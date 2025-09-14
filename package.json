@@ -10,7 +10,8 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-  "build": "nest build",
+  "clean": "rmdir /s /q dist || exit 0",
+  "build": "nest build --output-path dist",
   "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
   "start": "nest start",
   "seed": "ts-node src/scripts/seed.ts",
