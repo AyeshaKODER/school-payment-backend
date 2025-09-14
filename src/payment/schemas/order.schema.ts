@@ -6,10 +6,10 @@ export type OrderDocument = Order & Document;
 @Schema({ collection: 'orders', timestamps: true })
 export class Order {
   @Prop({ type: Types.ObjectId, required: true })
-  school_id: Types.ObjectId;
+  school_id!: Types.ObjectId;  // <-- added !
 
   @Prop({ type: Types.ObjectId, required: true })
-  trustee_id: Types.ObjectId;
+  trustee_id!: Types.ObjectId; // <-- added !
 
   @Prop({
     type: {
@@ -19,17 +19,17 @@ export class Order {
     },
     required: true,
   })
-  student_info: {
+  student_info!: {              // <-- added !
     name: string;
     id: string;
     email: string;
   };
 
   @Prop({ required: true })
-  gateway_name: string;
+  gateway_name!: string;         // <-- added !
 
   @Prop({ required: true, unique: true })
-  custom_order_id: string;
+  custom_order_id!: string;      // <-- added !
 }
 
 // ✅ Export schema correctly

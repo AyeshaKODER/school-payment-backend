@@ -6,22 +6,22 @@ export type WebhookLogDocument = WebhookLog & Document;
 @Schema({ collection: 'webhook_logs', timestamps: true })
 export class WebhookLog {
   @Prop({ required: true })
-  webhook_id: string;
+  webhook_id!: string; // <-- added !
 
   @Prop({ required: true })
-  event_type: string;
+  event_type!: string; // <-- added !
 
   @Prop({ type: Object, required: true })
-  payload: any;
+  payload!: any; // <-- added !
 
   @Prop({ required: true, default: 'received' })
-  status: string;
+  status!: string; // <-- added !
 
   @Prop()
-  error_message?: string;
+  error_message?: string; // optional, no changes needed
 
   @Prop({ required: true })
-  processed_at: Date;
+  processed_at!: Date; // <-- added !
 }
 
 export const WebhookLogSchema = SchemaFactory.createForClass(WebhookLog);

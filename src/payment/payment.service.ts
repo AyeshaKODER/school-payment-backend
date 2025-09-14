@@ -36,7 +36,7 @@ export class PaymentService {
       // Generate custom order id
       const custom_order_id = `ORD_${Date.now()}_${Math.random()
         .toString(36)
-        .substr(2, 9)}`;
+        .substring(2, 11)}`;
 
       // Save order locally
       const order = new this.orderModel({
@@ -50,7 +50,7 @@ export class PaymentService {
         collect_id: savedOrder._id,
         order_amount,
         transaction_amount: order_amount,
-        payment_mode: createPaymentDto.payment_mode,
+        payment_mode: createPaymentDto.payment_mode!,
         payment_details: 'Pending',
         bank_reference: 'PENDING',
         payment_message: 'Payment initiated',
@@ -60,7 +60,7 @@ export class PaymentService {
       });
       await orderStatus.save();
 
-      // ✅ Prepare JWT sign using PG Secret Key
+      // Prepare JWT sign using PG Secret Key
       const pgKey = this.configService.get<string>('PAYMENT_PG_KEY');
       if (!pgKey) {
         throw new InternalServerErrorException(
@@ -76,7 +76,7 @@ export class PaymentService {
 
       const sign = jwt.sign(jwtPayload, pgKey, { expiresIn: '5m' });
 
-      // ✅ Build request payload for Edviron
+      // Build request payload for payment gateway
       const paymentGatewayPayload = {
         school_id,
         amount: order_amount,
@@ -84,16 +84,13 @@ export class PaymentService {
         sign,
       };
 
-      // Call Edviron API
       const paymentApiUrl = this.configService.get<string>('PAYMENT_API_URL');
       const apiKey = this.configService.get<string>('PAYMENT_API_KEY');
 
-      const response = await firstValueFrom<
-        AxiosResponse<{
-          collect_request_id: string;
-          Collect_request_url: string;
-        }>
-      >(
+      const response = await firstValueFrom<AxiosResponse<{
+        collect_request_id: string;
+        Collect_request_url: string;
+      }>>(
         this.httpService.post(
           `${paymentApiUrl}/create-collect-request`,
           paymentGatewayPayload,
@@ -114,8 +111,12 @@ export class PaymentService {
         order_id: savedOrder._id,
         message: 'Payment request created successfully',
       };
-    } catch (error) {
-      console.error('Payment creation error:', error?.response?.data || error);
+    } catch (err: unknown) {
+      const error =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as any).response?.data
+          : err;
+      console.error('Payment creation error:', error);
       throw new InternalServerErrorException(
         'Failed to create payment request',
       );
@@ -134,12 +135,9 @@ export class PaymentService {
       const apiKey = this.configService.get<string>('PAYMENT_API_KEY');
 
       const response = await firstValueFrom(
-        this.httpService.get(
-          `${paymentApiUrl}/collect-request/${order.custom_order_id}`,
-          {
-            headers: { Authorization: `Bearer ${apiKey}` },
-          },
-        ),
+        this.httpService.get(`${paymentApiUrl}/collect-request/${order.custom_order_id}`, {
+          headers: { Authorization: `Bearer ${apiKey}` },
+        }),
       );
 
       // Update order status in DB
@@ -157,17 +155,18 @@ export class PaymentService {
       );
 
       return response.data;
-    } catch (error) {
-      console.error(
-        'Check payment status error:',
-        error?.response?.data || error,
-      );
+    } catch (err: unknown) {
+      const error =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as any).response?.data
+          : err;
+      console.error('Check payment status error:', error);
       throw new InternalServerErrorException('Failed to check payment status');
     }
   }
 
   // ---------------- HANDLE WEBHOOK ---------------- //
-  async handleWebhook(payload: any) {
+  async handleWebhook(payload: Record<string, any>) {
     try {
       const { collect_request_id, status, bank_reference, message } = payload;
 
@@ -193,8 +192,12 @@ export class PaymentService {
       );
 
       return { success: true, message: 'Webhook processed' };
-    } catch (error) {
-      console.error('Webhook handling error:', error?.response?.data || error);
+    } catch (err: unknown) {
+      const error =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as any).response?.data
+          : err;
+      console.error('Webhook handling error:', error);
       throw new InternalServerErrorException('Failed to process webhook');
     }
   }

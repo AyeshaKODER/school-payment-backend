@@ -11,55 +11,55 @@ import { Type } from 'class-transformer';
 export class OrderInfoDto {
   @IsNotEmpty()
   @IsString()
-  order_id: string;
+  order_id!: string;
 
   @IsNotEmpty()
   @IsNumber()
-  order_amount: number;
+  order_amount!: number;
 
   @IsNotEmpty()
   @IsNumber()
-  transaction_amount: number;
+  transaction_amount!: number;
 
   @IsNotEmpty()
   @IsString()
-  gateway: string;
+  gateway!: string;
 
   @IsNotEmpty()
   @IsString()
-  bank_reference: string;
+  bank_reference!: string;
 
   @IsNotEmpty()
   @IsString()
-  status: string;
+  status!: string;
 
   @IsNotEmpty()
   @IsString()
-  payment_mode: string;
+  payment_mode!: string;
 
   @IsNotEmpty()
   @IsString()
-  payemnt_details: string;
+  payment_details!: string; // Fixed typo
 
   @IsNotEmpty()
   @IsString()
-  Payment_message: string;
+  payment_message!: string; // Fixed typo
 
   @IsNotEmpty()
   @IsDateString()
-  payment_time: string;
+  payment_time!: string;
 
   @IsString()
-  error_message: string;
+  error_message?: string; // optional
 }
 
 export class WebhookDto {
   @IsNotEmpty()
   @IsNumber()
-  status: number;
+  status!: number;
 
   @ValidateNested()
   @Type(() => OrderInfoDto)
   @IsObject()
-  order_info: OrderInfoDto;
+  order_info!: OrderInfoDto;
 }

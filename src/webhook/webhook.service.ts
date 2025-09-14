@@ -27,11 +27,10 @@ export class WebhookService {
   async processWebhook(webhookDto: WebhookDto) {
     const { status, order_info } = webhookDto;
 
-    // Generate unique webhook ID for logging
     const webhookId = `WH_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     try {
-      // Log the webhook event
+      // Log webhook event
       const webhookLog = new this.webhookLogModel({
         webhook_id: webhookId,
         event_type: 'payment_update',
@@ -41,36 +40,30 @@ export class WebhookService {
       });
       await webhookLog.save();
 
-      // Find the order by custom_order_id (which is the order_id in webhook)
+      // Find the order by custom_order_id
       const order = await this.orderModel.findOne({
         custom_order_id: order_info.order_id,
       });
 
       if (!order) {
-        // Update webhook log with error
         await this.webhookLogModel.updateOne(
           { webhook_id: webhookId },
-          {
-            status: 'failed',
-            error_message: 'Order not found',
-          },
+          { status: 'failed', error_message: 'Order not found' },
         );
-        throw new NotFoundException(
-          `Order with ID ${order_info.order_id} not found`,
-        );
+        throw new NotFoundException(`Order with ID ${order_info.order_id} not found`);
       }
 
-      // Find and update the order status
+      // Update order status
       const updatedOrderStatus = await this.orderStatusModel.findOneAndUpdate(
         { collect_id: order._id },
         {
           order_amount: order_info.order_amount,
           transaction_amount: order_info.transaction_amount,
           payment_mode: order_info.payment_mode,
-          payment_details: order_info.payemnt_details, // Note: webhook has typo "payemnt_details"
+          payment_details: order_info.payment_details, // corrected
           bank_reference: order_info.bank_reference,
-          payment_message: order_info.Payment_message, // Note: webhook has "Payment_message"
-          status: order_info.status.toLowerCase(),
+          payment_message: order_info.payment_message, // corrected
+          status: String(status).toLowerCase(), // ensure string
           error_message: order_info.error_message || 'NA',
           payment_time: new Date(order_info.payment_time),
         },
@@ -78,18 +71,14 @@ export class WebhookService {
       );
 
       if (!updatedOrderStatus) {
-        // Update webhook log with error
         await this.webhookLogModel.updateOne(
           { webhook_id: webhookId },
-          {
-            status: 'failed',
-            error_message: 'Order status not found',
-          },
+          { status: 'failed', error_message: 'Order status not found' },
         );
         throw new NotFoundException('Order status not found');
       }
 
-      // Update webhook log as successful
+      // Mark webhook log as completed
       await this.webhookLogModel.updateOne(
         { webhook_id: webhookId },
         { status: 'completed' },
@@ -100,23 +89,20 @@ export class WebhookService {
         message: 'Webhook processed successfully',
         webhook_id: webhookId,
         order_id: order_info.order_id,
-        updated_status: order_info.status.toLowerCase(),
+        updated_status: String(status).toLowerCase(),
       };
-    } catch (error) {
-      // Update webhook log with error
+    } catch (error: any) {
       await this.webhookLogModel.updateOne(
         { webhook_id: webhookId },
         {
           status: 'failed',
-          error_message: error.message || 'Unknown error',
+          error_message: error?.message || 'Unknown error',
         },
       );
 
       console.error('Webhook processing error:', error);
 
-      if (error instanceof NotFoundException) {
-        throw error;
-      }
+      if (error instanceof NotFoundException) throw error;
 
       throw new InternalServerErrorException('Failed to process webhook');
     }
