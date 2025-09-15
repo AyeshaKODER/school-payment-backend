@@ -5,35 +5,46 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  
+  // Get config service
   const configService = app.get(ConfigService);
-
+  
+  // Enable CORS for all origins (Railway needs this)
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:5173'],
+    origin: true, // Allow all origins for Railway
     credentials: true,
   });
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
+  // Global validation pipe
+  app.useGlobalPipes(new ValidationPipe({
+    transform: true,
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    disableErrorMessages: false,
+  }));
 
-  // ✅ Proper healthcheck endpoint for Railway
+  // IMPORTANT: Health check endpoint BEFORE listening
   app.getHttpAdapter().get('/health', (req, res) => {
     res.status(200).json({
       status: 'OK',
       timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development'
     });
   });
 
-  // ✅ Use Railway’s injected env var directly as fallback
-  const port = process.env.PORT || configService.get<number>('PORT') || 3000;
+  // Railway provides PORT environment variable
+  const port = process.env.PORT || configService.get('PORT') || 3000;
 
-  // ✅ Important: bind to 0.0.0.0 so Railway can access it
+  // Listen on 0.0.0.0 for Railway (not just localhost)
   await app.listen(port, '0.0.0.0');
-  console.log(`🚀 Application running on port ${port}`);
+  
+  console.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
+  console.log(`📊 Health check available at: http://0.0.0.0:${port}/health`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('❌ Error starting application:', error);
+  process.exit(1);
+});
