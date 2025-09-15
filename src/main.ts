@@ -5,46 +5,32 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
-  // Get config service
   const configService = app.get(ConfigService);
-  
-  // Enable CORS for all origins (Railway needs this)
+
   app.enableCors({
-    origin: true, // Allow all origins for Railway
+    origin: ['http://localhost:3000', 'http://localhost:5173'],
     credentials: true,
   });
 
-  // Global validation pipe
-  app.useGlobalPipes(new ValidationPipe({
-    transform: true,
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    disableErrorMessages: false,
-  }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
 
-  // IMPORTANT: Health check endpoint BEFORE listening
+  // Health endpoint for Railway
   app.getHttpAdapter().get('/health', (req, res) => {
-    res.status(200).json({
-      status: 'OK',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development'
-    });
+    res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
   });
 
-  // Railway provides PORT environment variable
-  const port = process.env.PORT || configService.get('PORT') || 3000;
+  // Use Railway's injected PORT first, then ConfigService, then 3000
+  const port = process.env.PORT || configService.get<number>('PORT') || 3000;
 
-  // Listen on 0.0.0.0 for Railway (not just localhost)
+  // bind to 0.0.0.0 so Railway can reach the container
   await app.listen(port, '0.0.0.0');
-  
-  console.log(`🚀 Application is running on: http://0.0.0.0:${port}`);
-  console.log(`📊 Health check available at: http://0.0.0.0:${port}/health`);
-  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🚀 Application running on port ${port}`);
 }
 
-bootstrap().catch((error) => {
-  console.error('❌ Error starting application:', error);
-  process.exit(1);
-});
+bootstrap();

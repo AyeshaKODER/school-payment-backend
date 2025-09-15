@@ -18,25 +18,23 @@ import { AuthMiddleware } from './auth/auth.middleware';
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
+      inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         uri: configService.get<string>('MONGODB_URI'),
-        retryWrites: true,
-        w: 'majority',
       }),
-      inject: [ConfigService],
     }),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
+      inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { 
+        signOptions: {
           expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h'),
           issuer: 'school-payment-api',
           audience: 'school-payment-frontend',
         },
       }),
-      inject: [ConfigService],
       global: true,
     }),
     AuthModule,
@@ -47,7 +45,6 @@ import { AuthMiddleware } from './auth/auth.middleware';
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    // Apply auth middleware to protected routes
     consumer
       .apply(AuthMiddleware)
       .forRoutes('/transactions', '/payment', '/transaction-status');
