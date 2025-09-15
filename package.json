@@ -11,7 +11,7 @@
   "license": "UNLICENSED",
   "scripts": {
     "clean": "rimraf dist dist-build",
-    "build": "npm run clean && nest build --output-path dist",
+    "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "seed": "ts-node src/scripts/seed.ts",
@@ -40,6 +40,7 @@
     "class-validator": "^0.14.0",
     "dotenv": "^17.2.2",
     "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.19.0",
     "mongoose": "^7.8.7",
     "passport": "^0.6.0",
     "passport-jwt": "^4.0.1",
