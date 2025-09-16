@@ -1,57 +1,42 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { AppModule } from './app.module';
+import { INestApplication } from '@nestjs/common';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+class SimpleAppModule {}
 
-  // Enable CORS
-  app.enableCors({
-    origin: true,
-    credentials: true,
-  });
+async function bootstrap(): Promise<void> {
+  console.log('Starting School Payment API...');
+  console.log('Node version:', process.version);
+  console.log('Environment:', process.env.NODE_ENV || 'development');
 
-  // Global validation pipe
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
+  try {
+    const app: INestApplication = await NestFactory.create(SimpleAppModule);
 
-  // Root path health check
-  app.getHttpAdapter().get('/', (req, res) => {
-    res.status(200).json({
-      status: 'OK',
-      message: 'School Payment API is running',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
+    // Root endpoint
+    app.getHttpAdapter().get('/', (req: any, res: any) => {
+      res.status(200).json({
+        status: 'OK',
+        message: 'School Payment API is running!',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0',
+      });
     });
-  });
 
-  // Standard health check endpoint
-  app.getHttpAdapter().get('/health', (req, res) => {
-    res.status(200).json({
-      status: 'OK',
-      message: 'Healthcheck passed ✅',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      environment: process.env.NODE_ENV || 'development',
+    // Health endpoint
+    app.getHttpAdapter().get('/health', (req: any, res: any) => {
+      res.status(200).json({ status: 'healthy' });
     });
-  });
 
-  // Railway PORT
-  const port = process.env.PORT || 3000;
+    const port: number = parseInt(process.env.PORT || '3000', 10);
 
-  await app.listen(port, '0.0.0.0');
-  console.log(`🚀 Application is running on http://0.0.0.0:${port}`);
-  console.log(`📊 Health check endpoints: GET / and GET /health`);
+    await app.listen(port, '0.0.0.0');
+    console.log(`✅ Application successfully started on port ${port}`);
+  } catch (error) {
+    console.error('❌ Failed to start application:', error);
+    process.exit(1);
+  }
 }
 
-bootstrap().catch((error) => {
-  console.error('❌ Application failed to start:', error);
+bootstrap().catch((error: Error) => {
+  console.error('❌ Bootstrap failed:', error);
   process.exit(1);
 });
