@@ -1,10 +1,10 @@
-import { 
-  Controller, 
-  Post, 
-  Get, 
-  Put, 
-  Body, 
-  ValidationPipe, 
+import {
+  Controller,
+  Post,
+  Get,
+  Put,
+  Body,
+  ValidationPipe,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -14,9 +14,10 @@ import { CreateUserDto, LoginDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { GetUser } from './user.decorator';
 import type { JwtPayload } from './user.decorator';
+
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
@@ -35,7 +36,6 @@ export class AuthController {
   getProtected() {
     return { message: 'This is a protected route ✅' };
   }
-
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
@@ -60,12 +60,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async logout(@GetUser() user: JwtPayload) {
-    // In a more advanced implementation, you would:
-    // 1. Add token to blacklist
-    // 2. Clear refresh tokens from database
-    // 3. Log the logout event
-    
-    return { 
+    return {
       message: 'Logged out successfully',
       timestamp: new Date().toISOString(),
     };
@@ -74,8 +69,8 @@ export class AuthController {
   @Get('validate-token')
   @UseGuards(JwtAuthGuard)
   async validateToken(@GetUser() user: JwtPayload) {
-    return { 
-      valid: true, 
+    return {
+      valid: true,
       user: {
         id: user.sub,
         username: user.username,

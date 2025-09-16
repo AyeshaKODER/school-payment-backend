@@ -3,11 +3,16 @@ import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  getHello: any;
-  constructor(private readonly appService: AppService) {}
-
   @Get()
-  getHealth() {
-    return { message: 'Backend is working 🚀' };
+  getRoot(): { message: string } {
+    return { message: 'Backend is running ✅' };
+  }
+
+  @Get('health')
+  healthCheck(): { status: string; timestamp: string } {
+    return {
+      status: 'Healthy ✅',
+      timestamp: new Date().toISOString(),
+    };
   }
 }
