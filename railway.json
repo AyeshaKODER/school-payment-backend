@@ -5,7 +5,6 @@
     "buildCommand": "npm ci"
   },
   "deploy": {
-    "startCommand": "npx ts-node src/main.ts",
-    "restartPolicyType": "ON_FAILURE"
+    "startCommand": "npx ts-node src/main.ts"
   }
 }
