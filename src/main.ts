@@ -20,9 +20,18 @@ async function bootstrap() {
     }),
   );
 
-  // Health endpoint for Railway
+  // Root endpoint (for Railway healthcheck)
   app.getHttpAdapter().get('/', (req, res) => {
-    res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+    res
+      .status(200)
+      .json({ status: 'OK', message: 'Backend is running 🚀', timestamp: new Date().toISOString() });
+  });
+
+  // Explicit health endpoint
+  app.getHttpAdapter().get('/health', (req, res) => {
+    res
+      .status(200)
+      .json({ status: 'OK', message: 'Healthcheck passed ✅', timestamp: new Date().toISOString() });
   });
 
   // Use Railway's injected PORT first, then ConfigService, then 3000
