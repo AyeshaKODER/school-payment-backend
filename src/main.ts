@@ -21,7 +21,7 @@ async function bootstrap() {
   );
 
   // Health endpoint for Railway
-  app.getHttpAdapter().get('/health', (req, res) => {
+  app.getHttpAdapter().get('/', (req, res) => {
     res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
   });
 
