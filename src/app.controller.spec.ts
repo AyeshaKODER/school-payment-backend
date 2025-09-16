@@ -15,8 +15,10 @@ describe('AppController', () => {
   });
 
   describe('getRoot', () => {
-    it('should return "Backend is working 🚀"', () => {
-      expect(appController.getRoot()).toEqual('Backend is working 🚀');
+    it('should return backend status object', () => {
+      expect(appController.getRoot()).toEqual({
+        message: 'Backend is running 🚀',
+      });
     });
   });
 });
