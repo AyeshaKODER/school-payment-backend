@@ -10,6 +10,9 @@ import { TransactionModule } from './transaction/transaction.module';
 import { WebhookModule } from './webhook/webhook.module';
 import { AuthMiddleware } from './auth/auth.middleware';
 
+// ✅ Import your AppController
+import { AppController } from './app.controller';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -42,6 +45,8 @@ import { AuthMiddleware } from './auth/auth.middleware';
     TransactionModule,
     WebhookModule,
   ],
+  // ✅ Register controller so / and /health work
+  controllers: [AppController],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {

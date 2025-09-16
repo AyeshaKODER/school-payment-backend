@@ -14,9 +14,9 @@ describe('AppController', () => {
     appController = module.get<AppController>(AppController);
   });
 
-  describe('getHello', () => {
+  describe('getRoot', () => {
     it('should return "Backend is working 🚀"', () => {
-      expect(appController.getHello()).toBe('Backend is working 🚀');
+      expect(appController.getRoot()).toEqual('Backend is working 🚀');
     });
   });
 });
