@@ -10,10 +10,10 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "clean": "rimraf dist dist-build",
-    "build": "nest build",
+    "clean": "rimraf dist",
+    "build": "tsc -p tsconfig.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
+    "start": "node dist/main.js", 
     "seed": "ts-node src/scripts/seed.ts",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
