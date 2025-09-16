@@ -3,20 +3,16 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 
-// ✅ Import express types for req/res
-import { Request, Response } from 'express';
-
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const configService = app.get(ConfigService);
 
-  // ✅ CORS
+  // Enable CORS
   app.enableCors({
-    origin: ['http://localhost:3000', 'http://localhost:5173'],
+    origin: true,
     credentials: true,
   });
 
-  // ✅ Global validation
+  // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,
@@ -25,31 +21,37 @@ async function bootstrap() {
     }),
   );
 
-  // ✅ Root endpoint (Railway healthcheck)
-  const server = app.getHttpAdapter().getInstance();
-  server.get('/', (req: Request, res: Response) => {
+  // Root path health check
+  app.getHttpAdapter().get('/', (req, res) => {
     res.status(200).json({
       status: 'OK',
-      message: 'Backend is running 🚀',
+      message: 'School Payment API is running',
       timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
     });
   });
 
-  // ✅ Explicit health endpoint
-  server.get('/health', (req: Request, res: Response) => {
+  // Standard health check endpoint
+  app.getHttpAdapter().get('/health', (req, res) => {
     res.status(200).json({
       status: 'OK',
       message: 'Healthcheck passed ✅',
       timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || 'development',
     });
   });
 
-  // ✅ Dynamic PORT (Railway → .env → fallback)
-  const port = process.env.PORT || configService.get<number>('PORT') || 3000;
+  // Railway PORT
+  const port = process.env.PORT || 3000;
 
-  // ✅ Bind to 0.0.0.0 so Railway can reach the container
   await app.listen(port, '0.0.0.0');
-  console.log(`🚀 Application running on port ${port}`);
+  console.log(`🚀 Application is running on http://0.0.0.0:${port}`);
+  console.log(`📊 Health check endpoints: GET / and GET /health`);
 }
 
-bootstrap();
+bootstrap().catch((error) => {
+  console.error('❌ Application failed to start:', error);
+  process.exit(1);
+});
