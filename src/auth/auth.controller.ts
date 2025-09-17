@@ -1,16 +1,5 @@
-import {
-  Controller,
-  Post,
-  Get,
-  Put,
-  Body,
-  ValidationPipe,
-  UseGuards,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
-import { Module } from '@nestjs/common';
-import { AuthModule } from './auth.module';
+// src/auth/auth.controller.ts
+import { Controller, Post, Get, Put, Body, ValidationPipe, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto, LoginDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -47,37 +36,20 @@ export class AuthController {
 
   @Put('change-password')
   @UseGuards(JwtAuthGuard)
-  async changePassword(
-    @GetUser() user: JwtPayload,
-    @Body() body: { oldPassword: string; newPassword: string },
-  ) {
-    return this.authService.changePassword(
-      user.sub,
-      body.oldPassword,
-      body.newPassword,
-    );
+  async changePassword(@GetUser() user: JwtPayload, @Body() body: { oldPassword: string; newPassword: string }) {
+    return this.authService.changePassword(user.sub, body.oldPassword, body.newPassword);
   }
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   async logout(@GetUser() user: JwtPayload) {
-    return {
-      message: 'Logged out successfully',
-      timestamp: new Date().toISOString(),
-    };
+    return { message: 'Logged out successfully', timestamp: new Date().toISOString() };
   }
 
   @Get('validate-token')
   @UseGuards(JwtAuthGuard)
   async validateToken(@GetUser() user: JwtPayload) {
-    return {
-      valid: true,
-      user: {
-        id: user.sub,
-        username: user.username,
-        role: user.role || 'user',
-      },
-    };
+    return { valid: true, user: { id: user.sub, username: user.username, role: user.role || 'user' } };
   }
 }
