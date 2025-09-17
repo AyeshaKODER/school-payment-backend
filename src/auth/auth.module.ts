@@ -11,31 +11,27 @@ import { JwtStrategy } from './jwt.strategy';
 
 @Module({
   imports: [
-    // ConfigModule should be global, already imported in AppModule
-    ConfigModule,
-    
-    // Mongoose schema for users
+    ConfigModule, // ✅ keep this, but AppModule has isGlobal already
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    
-    // Passport JWT setup
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    
-    // JwtModule setup
     JwtModule.registerAsync({
       imports: [ConfigModule],
+      inject: [ConfigService],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET') || 'defaultSecret',
-        signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '24h' },
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '24h',
+        },
       }),
-      inject: [ConfigService],
     }),
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],
   exports: [
-    AuthService,
-    JwtStrategy,
-    MongooseModule, // Exported in case other modules need User model
+    AuthService,   // ✅ make sure this is exported
+    JwtModule,     // ✅ export Jwt so other modules can reuse
+    PassportModule,
+    MongooseModule,
   ],
 })
 export class AuthModule {}
