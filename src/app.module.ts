@@ -1,22 +1,15 @@
-import { Module, MiddlewareConsumer } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-
+import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
-import { PaymentModule } from './payment/payment.module';
-import { TransactionModule } from './transaction/transaction.module';
-import { WebhookModule } from './webhook/webhook.module';
-import { AppController } from './app.controller';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    MongooseModule.forRoot(process.env.MONGODB_URI),
-    AuthModule,
-    PaymentModule,
-    TransactionModule,
-    WebhookModule,
+    MongooseModule.forRoot('mongodb://localhost:27017/school-payment'), // your DB URI
+    AuthModule, // ← MUST import AuthModule here
   ],
-  controllers: [AppController],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
