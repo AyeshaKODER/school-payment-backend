@@ -1,28 +1,19 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-
 import { AuthModule } from './auth/auth.module';
-import { PaymentModule } from './payment/payment.module';
-import { TransactionModule } from './transaction/transaction.module';
-import { WebhookModule } from './webhook/webhook.module';
+
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, envFilePath: '.env' }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI'),
+      useFactory: () => ({
+        uri: process.env.MONGODB_URI || 'mongodb://localhost:27017/school-payments',
       }),
     }),
-    AuthModule,         // ✅ includes AuthService
-    PaymentModule,
-    TransactionModule,
-    WebhookModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
-
