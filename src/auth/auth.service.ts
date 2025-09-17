@@ -3,7 +3,7 @@ import { Injectable, UnauthorizedException, ConflictException, Logger } from '@n
 import { InjectModel } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 
 import { User, UserDocument } from './schemas/user.schema';
@@ -34,31 +34,56 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const user = new this.userModel({ username, email, password: hashedPassword, role: 'user', isActive: true });
+    const user = new this.userModel({
+      username,
+      email,
+      password: hashedPassword,
+      role: 'user',
+      isActive: true,
+    });
+
     const savedUser = await user.save();
     this.logger.log(`User registered successfully with ID: ${savedUser._id}`);
 
-    const payload = { username: savedUser.username, sub: savedUser._id, role: savedUser.role };
+    const payload = { username: savedUser.username, sub: savedUser._id.toString(), role: savedUser.role };
     const access_token = this.jwtService.sign(payload);
 
-    return { access_token, user: { id: savedUser._id.toString(), username: savedUser.username, email: savedUser.email, role: savedUser.role } };
+    return {
+      access_token,
+      user: {
+        id: savedUser._id.toString(),
+        username: savedUser.username,
+        email: savedUser.email,
+        role: savedUser.role,
+      },
+    };
   }
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
     const { username, password } = loginDto;
     this.logger.log(`Login attempt for username: ${username}`);
 
-    const user = await this.userModel.findOne({ $or: [{ username }, { email: username }] }).exec();
+    const user = await this.userModel
+      .findOne({ $or: [{ username }, { email: username }] })
+      .exec();
     if (!user) throw new UnauthorizedException('Invalid credentials');
     if (!user.isActive) throw new UnauthorizedException('Account has been disabled');
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) throw new UnauthorizedException('Invalid credentials');
 
-    const payload = { username: user.username, sub: user._id, role: user.role };
+    const payload = { username: user.username, sub: user._id.toString(), role: user.role };
     const access_token = this.jwtService.sign(payload);
 
-    return { access_token, user: { id: user._id.toString(), username: user.username, email: user.email, role: user.role } };
+    return {
+      access_token,
+      user: {
+        id: user._id.toString(),
+        username: user.username,
+        email: user.email,
+        role: user.role,
+      },
+    };
   }
 
   async validateUser(userId: string): Promise<User | null> {
@@ -83,6 +108,14 @@ export class AuthService {
     const user = await this.userModel.findById(userId).select('-password').exec();
     if (!user) throw new UnauthorizedException('User not found');
 
-    return { id: user._id, username: user.username, email: user.email, role: user.role, isActive: user.isActive, createdAt: (user as any).createdAt, updatedAt: (user as any).updatedAt };
+    return {
+      id: user._id.toString(),
+      username: user.username,
+      email: user.email,
+      role: user.role,
+      isActive: user.isActive,
+      createdAt: (user as any).createdAt,
+      updatedAt: (user as any).updatedAt,
+    };
   }
 }

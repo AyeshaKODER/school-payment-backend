@@ -1,28 +1,26 @@
+// src/auth/schemas/user.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
-export type UserDocument = User & Document;
-
-@Schema({ collection: 'users', timestamps: true })
+@Schema({ timestamps: true })
 export class User {
   @Prop({ required: true, unique: true })
-  username!: string;  // <-- added !
+  username!: string;   // 👈 added !
 
   @Prop({ required: true, unique: true })
-  email!: string;     // <-- added !
+  email!: string;
 
   @Prop({ required: true })
-  password!: string;  // <-- added !
+  password!: string;
 
   @Prop({ default: 'user' })
-  role!: string;      // <-- added !
+  role!: string;
 
   @Prop({ default: true })
-  isActive!: boolean; // <-- added !
+  isActive!: boolean;
 }
 
-export const UserSchema = SchemaFactory.createForClass(User);
+// 👇 extend Document properly so _id is recognized
+export type UserDocument = User & Document & { _id: Types.ObjectId };
 
-// Create indexes
-UserSchema.index({ username: 1 });
-UserSchema.index({ email: 1 });
+export const UserSchema = SchemaFactory.createForClass(User);
