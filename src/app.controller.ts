@@ -4,7 +4,7 @@ import { Controller, Get } from '@nestjs/common';
 export class AppController {
   @Get()
   getRoot(): { message: string } {
-    return { message: 'Backend is running ✅' };
+    return { message: 'School Payment API is running 🚀' };
   }
 
   @Get('health')
