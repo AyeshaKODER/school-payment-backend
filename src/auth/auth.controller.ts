@@ -9,6 +9,8 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import { AuthModule } from './auth.module';
 import { AuthService } from './auth.service';
 import { CreateUserDto, LoginDto } from './dto/auth.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
