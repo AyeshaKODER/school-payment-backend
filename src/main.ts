@@ -25,7 +25,14 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-
+  app.getHttpAdapter().get('/', (req: any, res: any) => {
+  res.status(200).json({
+    status: 'OK',
+    message: 'School Payment API is running 🚀',
+    timestamp: new Date().toISOString(),
+  });
+  });
+  
   const port = process.env.PORT || configService.get<number>('PORT') || 3000;
   await app.listen(port, '0.0.0.0');
   console.log(`🚀 Backend running on port ${port}`);
