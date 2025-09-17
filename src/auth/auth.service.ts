@@ -28,4 +28,9 @@ export class AuthService {
     await user.save();
     return { message: 'User created successfully' };
   }
+  // auth.service.ts
+async validateUser(userId: string): Promise<User | null> {
+  return this.userModel.findById(userId).select('-password').exec();
+}
+
 }
