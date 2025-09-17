@@ -19,8 +19,6 @@ import { WebhookModule } from './webhook/webhook.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         uri: configService.get<string>('MONGODB_URI'),
-        retryWrites: true,
-        w: 'majority',
       }),
       inject: [ConfigService],
     }),
@@ -29,7 +27,7 @@ import { WebhookModule } from './webhook/webhook.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { 
+        signOptions: {
           expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h'),
         },
       }),
@@ -41,7 +39,5 @@ import { WebhookModule } from './webhook/webhook.module';
     TransactionModule,
     WebhookModule,
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}

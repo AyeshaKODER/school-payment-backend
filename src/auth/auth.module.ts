@@ -1,5 +1,3 @@
-// Update your src/auth/auth.module.ts to properly export AuthService:
-
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { JwtModule } from '@nestjs/jwt';
@@ -13,19 +11,24 @@ import { JwtStrategy } from './jwt.strategy';
 
 @Module({
   imports: [
+    ConfigModule, // 👈 added this so ConfigService works here
     MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
-    PassportModule,
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES_IN') },
+        signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h') },
       }),
       inject: [ConfigService],
     }),
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
-  exports: [AuthService, JwtStrategy], // Make sure to export AuthService
+  exports: [
+    AuthService,
+    JwtStrategy,
+    MongooseModule, // 👈 export so other modules can reuse User schema if needed
+  ],
 })
 export class AuthModule {}
