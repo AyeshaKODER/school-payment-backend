@@ -8,21 +8,16 @@ import { AuthModule } from './auth/auth.module';
 import { PaymentModule } from './payment/payment.module';
 import { TransactionModule } from './transaction/transaction.module';
 import { WebhookModule } from './webhook/webhook.module';
-import { AuthMiddleware } from './auth/auth.middleware';
-
-// ✅ Import your AppController
 import { AppController } from './app.controller';
+import { AuthMiddleware } from './auth/auth.middleware';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
-    }),
+    ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         uri: configService.get<string>('MONGODB_URI'),
       }),
     }),
@@ -30,13 +25,9 @@ import { AppController } from './app.controller';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h'),
-          issuer: 'school-payment-api',
-          audience: 'school-payment-frontend',
-        },
+        signOptions: { expiresIn: configService.get<string>('JWT_EXPIRES_IN', '24h') },
       }),
       global: true,
     }),
@@ -45,13 +36,10 @@ import { AppController } from './app.controller';
     TransactionModule,
     WebhookModule,
   ],
-  // ✅ Register controller so / and /health work
   controllers: [AppController],
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(AuthMiddleware)
-      .forRoutes('/transactions', '/payment', '/transaction-status');
+    consumer.apply(AuthMiddleware).forRoutes('/transactions', '/payment', '/transaction-status');
   }
 }
