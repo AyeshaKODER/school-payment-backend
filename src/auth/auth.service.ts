@@ -1,9 +1,8 @@
-// src/auth/auth.service.ts
 import { Injectable, UnauthorizedException, ConflictException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 
 import { User, UserDocument } from './schemas/user.schema';
@@ -14,13 +13,15 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private jwtService: JwtService,
-    private configService: ConfigService,
+    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
+  // ✅ Register user
   async register(createUserDto: CreateUserDto): Promise<AuthResponseDto> {
     const { username, email, password } = createUserDto;
+
     this.logger.log(`Registration attempt for username: ${username}`);
 
     const existingUser = await this.userModel.findOne({
@@ -43,6 +44,7 @@ export class AuthService {
     });
 
     const savedUser = await user.save();
+
     this.logger.log(`User registered successfully with ID: ${savedUser._id}`);
 
     const payload = { username: savedUser.username, sub: savedUser._id.toString(), role: savedUser.role };
@@ -59,13 +61,16 @@ export class AuthService {
     };
   }
 
+  // ✅ Login user
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
     const { username, password } = loginDto;
+
     this.logger.log(`Login attempt for username: ${username}`);
 
-    const user = await this.userModel
-      .findOne({ $or: [{ username }, { email: username }] })
-      .exec();
+    const user = await this.userModel.findOne({
+      $or: [{ username }, { email: username }],
+    });
+
     if (!user) throw new UnauthorizedException('Invalid credentials');
     if (!user.isActive) throw new UnauthorizedException('Account has been disabled');
 
@@ -86,11 +91,17 @@ export class AuthService {
     };
   }
 
+  // ✅ Validate user by ID
   async validateUser(userId: string): Promise<User | null> {
     return this.userModel.findById(userId).select('-password').exec();
   }
 
-  async changePassword(userId: string, oldPassword: string, newPassword: string): Promise<{ message: string }> {
+  // ✅ Change password
+  async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
     const user = await this.userModel.findById(userId);
     if (!user) throw new UnauthorizedException('User not found');
 
@@ -99,23 +110,25 @@ export class AuthService {
 
     const hashedNewPassword = await bcrypt.hash(newPassword, 12);
     await this.userModel.findByIdAndUpdate(userId, { password: hashedNewPassword });
+
     this.logger.log(`Password changed successfully for user: ${userId}`);
 
     return { message: 'Password changed successfully' };
   }
 
-  async getUserProfile(userId: string) {
-    const user = await this.userModel.findById(userId).select('-password').exec();
-    if (!user) throw new UnauthorizedException('User not found');
+  // ✅ Get user profile
+async getUserProfile(userId: string) {
+  const user = await this.userModel.findById(userId).select('-password').exec();
+  if (!user) throw new UnauthorizedException('User not found');
 
-    return {
-      id: user._id.toString(),
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      isActive: user.isActive,
-      createdAt: (user as any).createdAt,
-      updatedAt: (user as any).updatedAt,
-    };
+  return {
+    id: user._id.toString(),
+    username: user.username,
+    email: user.email,
+    role: user.role,
+    isActive: user.isActive,
+    createdAt: user.createdAt, // ✅ now exists
+    updatedAt: user.updatedAt, // ✅ now exists
+  };
   }
 }
