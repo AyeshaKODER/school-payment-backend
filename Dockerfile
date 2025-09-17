@@ -1,14 +1,12 @@
-# Use Node 20
 FROM node:20-alpine
 
-# Set working directory
 WORKDIR /app
 
-# Copy package.json first for caching
+# Copy package files
 COPY package*.json ./
 
-# Install dependencies
-RUN npm ci --unsafe-perm
+# Install dependencies with legacy peer deps
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
@@ -16,5 +14,5 @@ COPY . .
 # Expose port
 EXPOSE 3000
 
-# Start app directly via ts-node
+# Start command
 CMD ["npx", "ts-node", "src/main.ts"]
