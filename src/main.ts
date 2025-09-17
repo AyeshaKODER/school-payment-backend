@@ -1,15 +1,34 @@
+// src/main.ts
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  
-  app.enableCors();
-  app.useGlobalPipes(new ValidationPipe());
-  
-  const port = process.env.PORT || 3000;
-  await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
+
+  const configService = app.get(ConfigService);
+
+  // ✅ Global route prefix
+  app.setGlobalPrefix('api');
+
+  // Enable CORS
+  app.enableCors({
+    origin: ['http://localhost:5173', 'https://school-payment-frontend-xi.vercel.app/'],
+    credentials: true,
+  });
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
+
+  const port = process.env.PORT || configService.get<number>('PORT') || 3000;
+  await app.listen(port, '0.0.0.0');
+  console.log(`🚀 Backend running on port ${port}`);
+  console.log(`📡 API available at /api`);
 }
 bootstrap();
