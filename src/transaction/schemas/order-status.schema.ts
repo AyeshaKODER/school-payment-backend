@@ -26,10 +26,7 @@ export class OrderStatus {
   @Prop({ required: true })
   payment_message!: string;
 
-  @Prop({
-    required: true,
-    enum: ['pending', 'success', 'failed', 'processing'],
-  })
+  @Prop({ required: true, enum: ['pending', 'success', 'failed', 'processing'] })
   status!: string;
 
   @Prop({ default: 'NA' })
@@ -40,8 +37,3 @@ export class OrderStatus {
 }
 
 export const OrderStatusSchema = SchemaFactory.createForClass(OrderStatus);
-
-// Create indexes for better query performance
-OrderStatusSchema.index({ collect_id: 1 });
-OrderStatusSchema.index({ status: 1 });
-OrderStatusSchema.index({ payment_time: -1 });

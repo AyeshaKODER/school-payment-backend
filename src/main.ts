@@ -14,7 +14,7 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors({
-    origin: ['http://localhost:5173', 'https://school-payment-frontend-xi.vercel.app/'],
+    origin: ['http://localhost:3000', 'https://school-payment-frontend-xi.vercel.app/'],
     credentials: true,
   });
 
