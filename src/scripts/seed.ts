@@ -70,46 +70,38 @@ async function seedData() {
           ? orderAmount
           : Math.floor(Math.random() * orderAmount);
 
-      // Create order
-      const order = new orderModel({
-        school_id: schoolId,
-        trustee_id: trusteeId,
-        student_info: {
-          name: `Student ${i}`,
-          id: `STU${i.toString().padStart(3, '0')}`,
-          email: `student${i}@school.edu`,
-        },
-        gateway_name: gateway,
-        custom_order_id: customOrderId,
-      });
+// Create order
+const order = new orderModel({
+  school_id: schoolId,
+  trustee_id: trusteeId,
+  student_info: {
+    name: `Student ${i}`,
+    id: `STU${i.toString().padStart(3, '0')}`,
+    email: `student${i}@school.edu`,
+  },
+  gateway_name: gateway,
+  custom_order_id: customOrderId,  // ✅ only in Order
+});
 
-      const savedOrder = await order.save();
+const savedOrder = await order.save();
+console.log(`Created order ${i}: customOrderId = ${customOrderId}`);
 
-      // Create order status (linked with order._id)
-      const orderStatus = new orderStatusModel({
-        collect_id: savedOrder._id, // link back to Order
-        custom_order_id: customOrderId,
-        order_amount: orderAmount,
-        transaction_amount: transactionAmount,
-        payment_mode: paymentMode,
-        bank_reference: `${gateway.toUpperCase()}${Math.floor(
-          Math.random() * 10000,
-        )}`,
-        payment_message:
-          status === 'success'
-            ? 'Payment successful'
-            : status === 'failed'
-            ? 'Payment failed'
-            : 'Payment processing',
-        status: status,
-        error_message:
-          status === 'failed' ? 'Insufficient balance' : undefined,
-        payment_time: new Date(
-          Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000, // last 30 days
-        ),
-      });
+// Create order status (NO custom_order_id here)
+const orderStatus = new orderStatusModel({
+  collect_id: savedOrder._id,  // ✅ link via ObjectId
+  order_amount: orderAmount,
+  transaction_amount: transactionAmount,
+  payment_mode: paymentMode,
+  payment_details: status === 'success' ? `success@${gateway.toLowerCase()}` : 'failed',
+  bank_reference: `${gateway.toUpperCase()}${Math.floor(Math.random() * 10000)}`,
+  payment_message: status === 'success' ? 'Payment successful' : 'Payment failed',
+  status: status,
+  error_message: status === 'failed' ? 'Insufficient balance' : 'NA',
+  payment_time: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
+});
 
-      await orderStatus.save();
+await orderStatus.save();
+
 
       console.log(`✅ Created order ${i}: ${customOrderId} [${status}]`);
     }
