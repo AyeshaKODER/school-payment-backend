@@ -1,3 +1,4 @@
+// Fixed src/auth/auth.service.ts
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { JwtService } from '@nestjs/jwt';
@@ -22,17 +23,17 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    // For development - simple password check
-    // In production, use bcrypt.compare(password, user.password)
+    // For development - simple password check for 'admin'
     const isValid = password === 'admin' || await bcrypt.compare(password, user.password);
     
     if (!isValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    // Fix: Properly cast user._id to string
     const payload = { 
       username: user.username, 
-      sub: user._id,
+      sub: (user._id as any).toString(), // Cast to any first, then toString()
       email: user.email,
       role: user.role
     };
@@ -40,7 +41,7 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign(payload),
       user: {
-        id: user._id,
+        id: (user._id as any).toString(), // Same fix here
         username: user.username,
         email: user.email,
         role: user.role
@@ -57,5 +58,28 @@ export class AuthService {
     });
     await user.save();
     return { message: 'User created successfully' };
+  }
+
+  // Required by JWT strategy
+  async validateUser(userId: string): Promise<User | null> {
+    try {
+      return await this.userModel.findById(userId).select('-password').exec();
+    } catch (error) {
+      return null;
+    }
+  }
+
+  async getUserProfile(userId: string): Promise<any> {
+    const user = await this.userModel.findById(userId).select('-password').exec();
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return {
+      id: (user._id as any).toString(), // Same fix here
+      username: user.username,
+      email: user.email,
+      role: user.role,
+    };
   }
 }

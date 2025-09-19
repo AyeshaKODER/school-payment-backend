@@ -1,26 +1,24 @@
-import { Controller, Get, Param, Query, UseGuards, ParseIntPipe, DefaultValuePipe } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { GetUser } from '../auth/user.decorator';
-import type { JwtPayload } from '../auth/user.decorator';
-
+import { Controller, Get, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
 import { TransactionService } from './transaction.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { GetUser, JwtPayload } from '../auth/user.decorator';
 
 @Controller()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard) // Protect all transaction routes
 export class TransactionController {
   constructor(private transactionService: TransactionService) {}
 
   @Get('transactions')
   async getAllTransactions(
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
+    @Query('page', ParseIntPipe) page = 1,
+    @Query('limit', ParseIntPipe) limit = 10,
     @Query('sort') sort?: string,
     @Query('order') order?: string,
     @Query('status') status?: string,
     @Query('schoolId') schoolId?: string,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
-    @GetUser() user?: JwtPayload,   // 👈 logged-in user
+    @GetUser() user?: JwtPayload, // Optional: access current user info
   ) {
     return this.transactionService.getAllTransactions(
       page,
@@ -37,21 +35,17 @@ export class TransactionController {
   @Get('transactions/school/:schoolId')
   async getTransactionsBySchool(
     @Param('schoolId') schoolId: string,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
-    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit: number,
-    @GetUser() user?: JwtPayload,   // 👈 logged-in user
+    @Query('page', ParseIntPipe) page = 1,
+    @Query('limit', ParseIntPipe) limit = 10,
+    @GetUser() user?: JwtPayload,
   ) {
-    return this.transactionService.getTransactionsBySchool(
-      schoolId,
-      page,
-      limit,
-    );
+    return this.transactionService.getTransactionsBySchool(schoolId, page, limit);
   }
 
   @Get('transaction-status/:customOrderId')
   async getTransactionStatus(
     @Param('customOrderId') customOrderId: string,
-    @GetUser() user?: JwtPayload,   // 👈 logged-in user
+    @GetUser() user?: JwtPayload,
   ) {
     return this.transactionService.getTransactionStatus(customOrderId);
   }

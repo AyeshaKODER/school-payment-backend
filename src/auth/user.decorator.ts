@@ -10,7 +10,8 @@ export const GetUser = createParamDecorator(
 export interface JwtPayload {
   sub: string;
   username: string;
-  role?: string;
+  email: string;
+  role: string;
   iat?: number;
   exp?: number;
 }

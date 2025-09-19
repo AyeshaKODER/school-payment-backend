@@ -1,41 +1,38 @@
-// src/main.ts
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  const configService = app.get(ConfigService);
-
-  // ✅ Global route prefix
-  app.setGlobalPrefix('api');
-
-  // Enable CORS
+  
+  // Enable CORS for your Vercel frontend
   app.enableCors({
-    origin: ['http://localhost:3000', 'https://school-payment-frontend-xi.vercel.app/'],
+    origin: [
+      'https://school-payment-frontend-xi.vercel.app',
+      'http://localhost:3000',
+      'http://localhost:5173'
+    ],
     credentials: true,
   });
+  
+  app.useGlobalPipes(new ValidationPipe({
+    transform: true,
+    whitelist: true,
+    forbidNonWhitelisted: true,
+  }));
 
-  app.useGlobalPipes(
-    new ValidationPipe({
-      transform: true,
-      whitelist: true,
-      forbidNonWhitelisted: true,
-    }),
-  );
-  app.getHttpAdapter().get('/', (req: any, res: any) => {
-  res.status(200).json({
-    status: 'OK',
-    message: 'School Payment API is running 🚀',
-    timestamp: new Date().toISOString(),
-  });
+  // Health check endpoint
+  app.getHttpAdapter().get('/health', (req, res) => {
+    res.status(200).json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    });
   });
   
-  const port = process.env.PORT || configService.get<number>('PORT') || 3000;
+  const port = process.env.PORT || 3000;
   await app.listen(port, '0.0.0.0');
-  console.log(`🚀 Backend running on port ${port}`);
-  console.log(`📡 API available at /api`);
+  console.log(`Application running on: http://0.0.0.0:${port}`);
 }
+
 bootstrap();
