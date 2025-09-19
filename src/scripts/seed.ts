@@ -24,9 +24,9 @@ async function seedData() {
     await orderModel.deleteMany({});
     await orderStatusModel.deleteMany({});
     await userModel.deleteMany({});
-    console.log('Cleared existing data');
+    console.log('🧹 Cleared existing data');
 
-    // Create default user
+    // Create default admin user
     const hashedPassword = await bcrypt.hash('password123', 10);
     const user = new userModel({
       username: 'admin',
@@ -35,9 +35,7 @@ async function seedData() {
       role: 'admin',
     });
     await user.save();
-    console.log(
-      'Created default user - username: admin, password: password123',
-    );
+    console.log('👤 Created admin user (username: admin, password: password123)');
 
     const schools = [
       '65b0e6293e9f76a9694d84b4',
@@ -55,11 +53,11 @@ async function seedData() {
     const paymentModes = ['upi', 'card', 'netbanking', 'wallet'];
     const statuses = ['success', 'failed', 'pending', 'processing'];
 
-    // Create sample orders and order statuses
+    // Create sample orders and statuses
     for (let i = 1; i <= 50; i++) {
-      const customOrderId = `ORD_${Date.now() + i}_${Math.random()
+      const customOrderId = `ORD_${Date.now()}_${i}_${Math.random()
         .toString(36)
-        .substr(2, 9)}`;
+        .substr(2, 6)}`;
       const schoolId = schools[Math.floor(Math.random() * schools.length)];
       const trusteeId = trustees[Math.floor(Math.random() * trustees.length)];
       const gateway = gateways[Math.floor(Math.random() * gateways.length)];
@@ -67,7 +65,10 @@ async function seedData() {
         paymentModes[Math.floor(Math.random() * paymentModes.length)];
       const status = statuses[Math.floor(Math.random() * statuses.length)];
       const orderAmount = Math.floor(Math.random() * 5000) + 500;
-      const transactionAmount = orderAmount + Math.floor(Math.random() * 200);
+      const transactionAmount =
+        status === 'success'
+          ? orderAmount
+          : Math.floor(Math.random() * orderAmount);
 
       // Create order
       const order = new orderModel({
@@ -84,36 +85,36 @@ async function seedData() {
 
       const savedOrder = await order.save();
 
-      // Log the custom order ID
-      console.log(`Created order ${i}: customOrderId = ${customOrderId}`);
-
-      // Create order status
+      // Create order status (linked with order._id)
       const orderStatus = new orderStatusModel({
-        collect_id: savedOrder._id,
+        collect_id: savedOrder._id, // link back to Order
         custom_order_id: customOrderId,
         order_amount: orderAmount,
         transaction_amount: transactionAmount,
         payment_mode: paymentMode,
-        payment_details:
-          status === 'success' ? `success@${gateway.toLowerCase()}` : 'failed',
         bank_reference: `${gateway.toUpperCase()}${Math.floor(
           Math.random() * 10000,
         )}`,
         payment_message:
-          status === 'success' ? 'Payment successful' : 'Payment failed',
+          status === 'success'
+            ? 'Payment successful'
+            : status === 'failed'
+            ? 'Payment failed'
+            : 'Payment processing',
         status: status,
-        error_message: status === 'failed' ? 'Insufficient balance' : 'NA',
+        error_message:
+          status === 'failed' ? 'Insufficient balance' : undefined,
         payment_time: new Date(
-          Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000,
+          Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000, // last 30 days
         ),
       });
 
       await orderStatus.save();
+
+      console.log(`✅ Created order ${i}: ${customOrderId} [${status}]`);
     }
 
-    console.log('✅ Seeded 50 sample transactions');
-    console.log('Sample school IDs:', schools);
-    console.log('🎉 Data seeding completed successfully!');
+    console.log('🎉 Seeded 50 sample transactions successfully!');
   } catch (error) {
     console.error('❌ Error seeding data:', error);
   } finally {
@@ -121,7 +122,6 @@ async function seedData() {
   }
 }
 
-// ✅ Run the seed function when this file is executed directly
 if (require.main === module) {
   seedData();
 }
