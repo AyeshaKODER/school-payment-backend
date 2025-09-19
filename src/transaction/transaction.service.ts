@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, PipelineStage } from 'mongoose';
 import { Order, OrderDocument } from '../payment/schemas/order.schema';
 import { OrderStatus, OrderStatusDocument } from './schemas/order-status.schema';
 
@@ -11,14 +11,38 @@ export class TransactionService {
     @InjectModel(OrderStatus.name) private orderStatusModel: Model<OrderStatusDocument>,
   ) {}
 
-  async getAllTransactions(page = 1, limit = 10, status?: string, schoolId?: string) {
+  async getAllTransactions(
+    page = 1, 
+    limit = 10, 
+    sort?: string, 
+    order?: string, 
+    status?: string, 
+    schoolId?: string, 
+    dateFrom?: string, 
+    dateTo?: string
+  ) {
     const skip = (page - 1) * limit;
     
     const matchConditions: any = {};
     if (status) matchConditions['orderStatus.status'] = status;
     if (schoolId) matchConditions.school_id = schoolId;
+    if (dateFrom || dateTo) {
+      matchConditions['orderStatus.payment_time'] = {};
+      if (dateFrom) matchConditions['orderStatus.payment_time'].$gte = new Date(dateFrom);
+      if (dateTo) matchConditions['orderStatus.payment_time'].$lte = new Date(dateTo);
+    }
 
-    const pipeline = [
+    // Build sort options
+    const sortOptions: any = {};
+    if (sort) {
+      const sortField = sort.startsWith('orderStatus.') ? sort : `orderStatus.${sort}`;
+      sortOptions[sortField] = order === 'desc' ? -1 : 1;
+    } else {
+      sortOptions['orderStatus.payment_time'] = -1;
+    }
+
+    // Fix: Properly type the pipeline stages
+    const pipeline: PipelineStage[] = [
       {
         $lookup: {
           from: 'order_status',
@@ -28,7 +52,15 @@ export class TransactionService {
         },
       },
       { $unwind: '$orderStatus' },
-      ...(Object.keys(matchConditions).length > 0 ? [{ $match: matchConditions }] : []),
+    ];
+
+    // Add match stage only if we have conditions
+    if (Object.keys(matchConditions).length > 0) {
+      pipeline.push({ $match: matchConditions });
+    }
+
+    // Add remaining stages
+    pipeline.push(
       {
         $project: {
           collect_id: '$_id',
@@ -45,14 +77,14 @@ export class TransactionService {
           payment_message: '$orderStatus.payment_message',
         },
       },
-      { $sort: { payment_time: -1 } },
+      { $sort: sortOptions },
       {
         $facet: {
           data: [{ $skip: skip }, { $limit: limit }],
           total: [{ $count: 'count' }],
         },
-      },
-    ];
+      }
+    );
 
     const result = await this.orderModel.aggregate(pipeline);
     const transactions = result[0].data;
@@ -70,7 +102,7 @@ export class TransactionService {
   }
 
   async getTransactionsBySchool(schoolId: string, page = 1, limit = 10) {
-    return this.getAllTransactions(page, limit, undefined, schoolId);
+    return this.getAllTransactions(page, limit, undefined, undefined, undefined, schoolId);
   }
 
   async getTransactionStatus(customOrderId: string) {
