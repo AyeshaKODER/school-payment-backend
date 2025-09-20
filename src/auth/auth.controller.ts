@@ -41,7 +41,7 @@ export class AuthController {
       },
     };
   }
-
+  @Public()
   @Get('test')
   test() {
     return { message: 'Auth controller is working!' };
