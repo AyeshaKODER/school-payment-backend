@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
+import { TransactionModule } from './transaction/transaction.module';
 
 @Module({
   imports: [
@@ -17,7 +20,9 @@ import { AuthModule } from './auth/auth.module';
           'mongodb://localhost:27017/school-payments',
       }),
     }),
-    AuthModule,
+  AuthModule,
+  TransactionModule,
   ],
+  // No global guard registration
 })
 export class AppModule {}

@@ -1,14 +1,14 @@
 import { Controller, Get, Param, Query, ParseIntPipe, UseGuards } from '@nestjs/common';
-import { TransactionService } from './transaction.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { TransactionService } from './transaction.service';
 import { GetUser, JwtPayload } from '../auth/user.decorator';
 
 @Controller()
-@UseGuards(JwtAuthGuard) // Protect all transaction routes
 export class TransactionController {
   constructor(private transactionService: TransactionService) {}
 
   @Get('transactions')
+  @UseGuards(JwtAuthGuard)
   async getAllTransactions(
     @Query('page', ParseIntPipe) page = 1,
     @Query('limit', ParseIntPipe) limit = 10,
@@ -33,6 +33,7 @@ export class TransactionController {
   }
 
   @Get('transactions/school/:schoolId')
+  @UseGuards(JwtAuthGuard)
   async getTransactionsBySchool(
     @Param('schoolId') schoolId: string,
     @Query('page', ParseIntPipe) page = 1,
@@ -43,6 +44,7 @@ export class TransactionController {
   }
 
   @Get('transaction-status/:customOrderId')
+  @UseGuards(JwtAuthGuard)
   async getTransactionStatus(
     @Param('customOrderId') customOrderId: string,
     @GetUser() user?: JwtPayload,
