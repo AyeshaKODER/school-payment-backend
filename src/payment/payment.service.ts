@@ -1,7 +1,7 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, NotFoundException, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ConfigService } from '@nestjs/config';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import * as jwt from 'jsonwebtoken';
 import { Order, OrderDocument } from './schemas/order.schema';
 import { OrderStatus, OrderStatusDocument } from '../transaction/schemas/order-status.schema';
@@ -21,28 +21,32 @@ export interface CreatePaymentDto {
 
 @Injectable()
 export class PaymentService {
+  private readonly logger = new Logger(PaymentService.name);
+
   constructor(
     @InjectModel(Order.name) private orderModel: Model<OrderDocument>,
     @InjectModel(OrderStatus.name) private orderStatusModel: Model<OrderStatusDocument>,
     private configService: ConfigService,
   ) {}
 
+  // ✅ Create payment
   async createPayment(createPaymentDto: CreatePaymentDto) {
     try {
-      // Generate unique custom_order_id
       const custom_order_id = `ORD_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // Create order in database
       const order = new this.orderModel({
         ...createPaymentDto,
         custom_order_id,
       });
-      
+
       const savedOrder = await order.save();
 
-      // Create initial order status
+      // ⚡ Cast _id to ObjectId / string
+      const orderId: string = (savedOrder._id as any).toString();
+
       const orderStatus = new this.orderStatusModel({
         collect_id: savedOrder._id,
+        custom_order_id,
         order_amount: createPaymentDto.order_amount,
         transaction_amount: createPaymentDto.order_amount,
         payment_mode: createPaymentDto.payment_mode,
@@ -56,33 +60,61 @@ export class PaymentService {
 
       await orderStatus.save();
 
-      // Prepare JWT payload for payment gateway
       const jwtPayload = {
-        collect_id: savedOrder._id.toString(),
+        collect_id: orderId,
         order_amount: createPaymentDto.order_amount,
-        custom_order_id: custom_order_id,
+        custom_order_id,
         school_id: createPaymentDto.school_id,
         student_info: createPaymentDto.student_info,
         timestamp: Date.now(),
       };
 
-      // Sign JWT token
       const apiKey = this.configService.get<string>('API_KEY') || 'default-api-key';
       const signedToken = jwt.sign(jwtPayload, apiKey, { expiresIn: '1h' });
 
-      // Return payment response
-      return {
-        success: true,
-        custom_order_id,
-        payment_url: `https://payment-gateway.example.com/pay/${custom_order_id}`,
-        order_id: savedOrder._id,
-        message: 'Payment request created successfully',
-        signature: signedToken,
-      };
-
+return {
+  success: true,
+  custom_order_id,
+  payment_url: `https://payment-gateway.example.com/pay/${custom_order_id}`,
+  order_id: orderId,  // ✅ now it's always string
+  message: 'Payment request created successfully',
+};
     } catch (error) {
-      console.error('Payment creation error:', error);
+      const err = error as Error;
+      this.logger.error('Payment creation error', err.message, err.stack);
       throw new InternalServerErrorException('Failed to create payment request');
     }
+  }
+
+  // ✅ Check payment status
+  async checkPaymentStatus(orderId: string) {
+    const orderStatus = await this.orderStatusModel.findOne({ collect_id: new Types.ObjectId(orderId) });
+
+    if (!orderStatus) {
+      throw new NotFoundException(`No payment status found for order ${orderId}`);
+    }
+
+    return {
+      orderId,
+      status: orderStatus.status,
+      transaction_amount: orderStatus.transaction_amount,
+      payment_mode: orderStatus.payment_mode,
+      payment_time: orderStatus.payment_time,
+    };
+  }
+
+  // ✅ Handle payment gateway webhook
+  async handleWebhook(payload: any) {
+    this.logger.log(`Received webhook: ${JSON.stringify(payload)}`);
+
+    // Example: update order status based on webhook payload
+    if (payload.custom_order_id && payload.status) {
+      await this.orderStatusModel.findOneAndUpdate(
+        { custom_order_id: payload.custom_order_id },
+        { status: payload.status, payment_message: payload.message || '' },
+      );
+    }
+
+    return { success: true, message: 'Webhook processed successfully' };
   }
 }
