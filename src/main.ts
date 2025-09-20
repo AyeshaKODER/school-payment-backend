@@ -1,9 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { JwtAuthGuard } from './auth/jwt-auth.guard';
+import { Reflector } from '@nestjs/core';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  // Register JwtAuthGuard globally
+  const jwtService = app.get(require('@nestjs/jwt').JwtService);
+  const configService = app.get(require('@nestjs/config').ConfigService);
+  app.useGlobalGuards(new JwtAuthGuard(jwtService, configService));
   
   // Add /api prefix to all routes (CRITICAL for frontend connection)
   app.setGlobalPrefix('api');

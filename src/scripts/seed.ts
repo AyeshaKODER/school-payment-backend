@@ -27,15 +27,15 @@ async function seedData() {
     console.log('🧹 Cleared existing data');
 
     // Create default admin user
-    const hashedPassword = await bcrypt.hash('password123', 10);
+    const hashedPassword = await bcrypt.hash('admin', 10);
     const user = new userModel({
       username: 'admin',
-      email: 'admin@schoolpay.com',
+      email: 'admin@gmail.com',
       password: hashedPassword,
       role: 'admin',
     });
     await user.save();
-    console.log('👤 Created admin user (username: admin, password: password123)');
+    console.log('👤 Created admin user (email: admin@gmail.com, password: admin)');
 
     const schools = [
       '65b0e6293e9f76a9694d84b4',
